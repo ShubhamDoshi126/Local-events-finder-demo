@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Events Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --hero-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --digest-bg: #f8f9fa;
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #2d2d2d;
+            --border-color: #404040;
+            --hero-gradient: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+            --digest-bg: #2d2d2d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .hero-section {
+            background: var(--hero-gradient);
+            color: white;
+            padding: 4rem 0;
+        }
+        
+        .event-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .digest-section {
+            background: var(--digest-bg);
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .spinner-border {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+
+        .category-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+
+        .filter-section {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .dark-mode .form-control:focus,
+        .dark-mode .form-select:focus {
+            background-color: var(--card-bg);
+            border-color: #667eea;
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="display-4 mb-4">
+                        <i class="fas fa-calendar-alt me-3"></i>
+                        Local Events Finder
+                    </h1>
+                    <p class="lead mb-4">Discover amazing events happening in your city</p>
+                    
+                    <!-- Search Form -->
+                    <form id="searchForm" class="row g-3 justify-content-center">
+                        <div class="col-md-6">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cityInput" 
+                                       name="city" 
+                                       placeholder="Enter city name" 
+                                       value="Detroit"
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-light btn-lg w-100">
+                                <span class="search-text">
+                                    <i class="fas fa-search me-2"></i>Find Events
+                                </span>
+                                <span class="loading">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Searching...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="container mt-4">
+        <div class="d-flex justify-content-end">
+            <button id="darkModeToggle" class="btn btn-outline-light">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div id="filterSection" class="container my-4" style="display: none;">
+        <div class="card filter-section">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-filter me-2"></i>Filter Events
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="all">All Categories</option>
+                            <option value="music">🎵 Music</option>
+                            <option value="sports">⚽ Sports</option>
+                            <option value="arts">🎨 Arts</option>
+                            <option value="technology">💻 Technology</option>
+                            <option value="food">🍽️ Food</option>
+                            <option value="education">📚 Education</option>
+                            <option value="networking">🤝 Networking</option>
+                            <option value="other">📌 Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="dateFromFilter">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="dateToFilter">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" class="form-control" id="searchFilter" placeholder="Search events...">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-search me-1"></i>Apply Filters
+                    </button>
+                    <button class="btn btn-outline-secondary" id="clearFilters">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="container my-5">
+        <div id="resultsSection" style="display: none;">
+            <!-- Weekend Digest -->
+            <div id="digestSection" class="digest-section rounded">
+                <h3 class="mb-3">
+                    <i class="fas fa-magic me-2"></i>Weekend Plan Digest
+                </h3>
+                <div id="digestContent"></div>
+            </div>
+
+            <!-- Download Button -->
+            <div class="text-center mb-4">
+                <button id="downloadBtn" class="btn btn-success btn-lg">
+                    <i class="fas fa-download me-2"></i>Download as PDF
+                </button>
+            </div>
+
+            <!-- Events Grid -->
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Events in <span id="cityName"></span>
+                        <span class="badge bg-primary ms-2" id="eventCount"></span>
+                    </h2>
+                </div>
+            </div>
+            
+            <div id="eventsGrid" class="row g-4">
+                <!-- Events will be populated here -->
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="text-center py-5" style="display: none;">
+            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">No events found</h3>
+            <p class="text-muted">Try searching for a different city or check back later.</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span id="errorText"></span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-heart text-danger me-1"></i>
+                Local Events Finder - Discover your city's best events
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentEvents = [];
+        let currentCity = '';
+        let currentDigest = '';
+
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) return;
+
+            // Show loading state
+            const button = this.querySelector('button[type="submit"]');
+            const searchText = button.querySelector('.search-text');
+            const loading = button.querySelector('.loading');
+            
+            searchText.style.display = 'none';
+            loading.style.display = 'inline';
+            button.disabled = true;
+
+            // Hide previous results
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('noResults').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('city', city);
+
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.events && data.events.length > 0) {
+                    currentEvents = data.events;
+                    currentCity = data.city;
+                    currentDigest = data.digest;
+                    displayResults(data);
+                } else {
+                    document.getElementById('noResults').style.display = 'block';
+                }
+            } catch (error) {
+                showError('Failed to fetch events. Please try again.');
+            } finally {
+                // Reset button state
+                searchText.style.display = 'inline';
+                loading.style.display = 'none';
+                button.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            // Update city name and count
+            document.getElementById('cityName').textContent = data.city;
+            document.getElementById('eventCount').textContent = data.total_events;
+
+            // Display digest
+            const digestContent = document.getElementById('digestContent');
+            digestContent.innerHTML = data.digest.replace(/\n/g, '<br>');
+
+            // Display events
+            const eventsGrid = document.getElementById('eventsGrid');
+            eventsGrid.innerHTML = '';
+
+            data.events.forEach(event => {
+                const eventCard = createEventCard(event);
+                eventsGrid.appendChild(eventCard);
+            });
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function createEventCard(event) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+
+            col.innerHTML = `
+                <div class="card event-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-star text-warning me-2"></i>
+                            ${event.title}
+                        </h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                ${event.date_time}
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                ${event.location}
+                            </small>
+                        </p>
+                        <p class="card-text">${event.description}</p>
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary category-badge">${getCategoryIcon(event.category)} ${event.category || 'other'}</span>
+                            <a href="${event.event_url || '#'}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i>View Event
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        // Download PDF functionality
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            if (!currentEvents.length) return;
+
+            try {
+                const response = await fetch('/download-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        city: currentCity,
+                        events: currentEvents,
+                        digest: currentDigest
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `events_${currentCity.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    showError('Failed to generate PDF. Please try again.');
+                }
+            } catch (error) {
+                showError('Failed to download PDF. Please try again.');
+            }
+        });
+
+        // Filter functionality
+        let originalEvents = [];
+
+        document.getElementById('applyFilters').addEventListener('click', applyFilters);
+        document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+        // Real-time search
+        document.getElementById('searchFilter').addEventListener('input', debounce(applyFilters, 300));
+
+        function applyFilters() {
+            const category = document.getElementById('categoryFilter').value;
+            const dateFrom = document.getElementById('dateFromFilter').value;
+            const dateTo = document.getElementById('dateToFilter').value;
+            const search = document.getElementById('searchFilter').value;
+
+            fetch('/filter-events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    events: originalEvents,
+                    filters: { category, date_from: dateFrom, date_to: dateTo, search }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayFilteredEvents(data.events);
+            })
+            .catch(error => showError('Failed to apply filters'));
+        }
+
+        function clearFilters() {
+            document.getElementById('categoryFilter').value = 'all';
+            document.getElementById('dateFromFilter').value = '';
+            document.getElementById('dateToFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            displayResults({ events: originalEvents, city: currentCity, digest: currentDigest, total_events: originalEvents.length });
+        }
+
+        function displayFilteredEvents(events) {
+            const eventsGrid = document.getElementById('eventsGrid');
+            eventsGrid.innerHTML = '';
+            
+            if (events.length === 0) {
+                eventsGrid.innerHTML = '<div class="col-12"><div class="alert alert-info">No events match your filters.</div></div>';
+                return;
+            }
+            
+            events.forEach(event => {
+                const eventCard = createEventCard(event);
+                eventsGrid.appendChild(eventCard);
+            });
+            
+            document.getElementById('eventCount').textContent = events.length;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Store original events and show filter section
+        const originalDisplayResults = displayResults;
+        displayResults = function(data) {
+            originalEvents = data.events;
+            originalDisplayResults(data);
+            document.getElementById('filterSection').style.display = 'block';
+        };
+
+        // Dark mode functionality
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            } else {
+                localStorage.setItem('theme', 'light');
+                darkModeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+            }
+        });
+
+
+        // Category icon helper function
+        function getCategoryIcon(category) {
+            const icons = {
+                'music': '🎵',
+                'sports': '⚽',
+                'arts': '🎨',
+                'technology': '💻',
+                'food': '🍽️',
+                'education': '📚',
+                'networking': '🤝',
+                'other': '📌'
+            };
+            return icons[category] || '📌';
+        }
+    </script>
+</body>
+</html>
