@@ -1,6 +1,6 @@
 # Local Events Finder
 
-A Python Flask web application that helps users discover local events in their city. The app scrapes event data from Eventbrite, displays results in a beautiful Bootstrap interface, and allows users to download event information as PDF reports.
+A Python Flask web application that helps users discover local events in their city. The app scrapes event data from Eventbrite or uses demo events to showcase the look, displays results in a beautiful Bootstrap interface, and allows users to download event information as PDF reports.
 
 ## Features
 
